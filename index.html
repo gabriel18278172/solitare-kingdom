@@ -16,27 +16,43 @@
     <link rel="apple-touch-icon" href="icons/icon-192.svg" />
     <link rel="stylesheet" href="styles.css" />
     <script>
-        // GameDistribution game ID
-        window["GD_OPTIONS"] = {
-            "gameId": "7fed26e3271740da9da1d195a948a4a2",
-            "onEvent": function (event) {
-                if (event.name === "SDK_GAME_START") {
-                    // Ad finished — resolve any pending hint callback
-                    if (typeof window._gdAdResolve === "function") {
-                        var cb = window._gdAdResolve;
-                        window._gdAdResolve = null;
-                        cb();
+        // Load GameDistribution SDK only in allowed embed contexts.
+        (function () {
+            var params = new URLSearchParams(window.location.search);
+            var hasGDReferrer = params.has("GD_SDK_REFERRER_URL") || params.has("gd_sdk_referrer_url");
+            var isGDHost = /(^|\.)gamedistribution\.com$/i.test(window.location.hostname);
+            var isEmbedded = window.self !== window.top;
+            var shouldLoadGdSdk = isGDHost || hasGDReferrer || isEmbedded;
+
+            if (!shouldLoadGdSdk) {
+                return;
+            }
+
+            window["GD_OPTIONS"] = {
+                "gameId": "7fed26e3271740da9da1d195a948a4a2",
+                "onEvent": function (event) {
+                    if (event.name === "SDK_GAME_START") {
+                        if (typeof window._gdAdResolve === "function") {
+                            var cb = window._gdAdResolve;
+                            window._gdAdResolve = null;
+                            cb();
+                        }
                     }
                 }
+            };
+
+            var d = document;
+            var s = "script";
+            var id = "gamedistribution-jssdk";
+            var fjs = d.getElementsByTagName(s)[0];
+            if (d.getElementById(id) || !fjs || !fjs.parentNode) {
+                return;
             }
-        };
-        (function (d, s, id) {
-            var js, fjs = d.getElementsByTagName(s)[0];
-            if (d.getElementById(id)) return;
-            js = d.createElement(s); js.id = id;
+            var js = d.createElement(s);
+            js.id = id;
             js.src = "https://html5.api.gamedistribution.com/main.js";
             fjs.parentNode.insertBefore(js, fjs);
-        }(document, "script", "gamedistribution-jssdk"));
+        }());
     </script>
 </head>
 
