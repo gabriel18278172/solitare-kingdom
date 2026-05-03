@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0b4f3b" />
+    <title>Solitare Kingdom</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Manrope:wght@400;600;700&display=swap"
+        rel="stylesheet" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" type="image/svg+xml" href="icons/favicon.svg" />
+    <link rel="apple-touch-icon" href="icons/icon-192.svg" />
+    <link rel="stylesheet" href="styles.css" />
+    <script>
+        // Replace YOUR_GAME_ID_HERE with your 32-char ID from gamedistribution.com
+        window["GD_OPTIONS"] = {
+            "gameId": "YOUR_GAME_ID_HERE",
+            "onEvent": function (event) {
+                if (event.name === "SDK_GAME_START") {
+                    // Ad finished — resolve any pending hint callback
+                    if (typeof window._gdAdResolve === "function") {
+                        var cb = window._gdAdResolve;
+                        window._gdAdResolve = null;
+                        cb();
+                    }
+                }
+            }
+        };
+        (function (d, s, id) {
+            var js, fjs = d.getElementsByTagName(s)[0];
+            if (d.getElementById(id)) return;
+            js = d.createElement(s); js.id = id;
+            js.src = "https://html5.api.gamedistribution.com/main.js";
+            fjs.parentNode.insertBefore(js, fjs);
+        }(document, "script", "gamedistribution-jssdk"));
+    </script>
+</head>
+
+<body>
+    <div class="bg-layer"></div>
+    <div id="fxLayer" class="fx-layer" aria-hidden="true"></div>
+    <section id="homeScreen" class="home-screen">
+        <div class="home-backdrop"></div>
+        <div class="home-shell">
+            <div class="home-hero">
+                <div class="home-mark" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 2l2.6 4.4L20 7l-3.6 3.4.9 5.1L12 13.7 6.7 15.5l.9-5.1L4 7l5.4-.6L12 2z" />
+                    </svg>
+                </div>
+                <div>
+                    <p class="eyebrow">Card Realm</p>
+                    <h1>Solitare Kingdom</h1>
+                    <p class="home-copy">Choose your table, tune your rules, and enter a polished solitaire hall built
+                        to feel like a full game collection.</p>
+                    <div class="hero-stats" aria-hidden="true">
+                        <span>♠ 3 Games</span>
+                        <span class="hero-stat-divider"></span>
+                        <span>♦ Premium Sound</span>
+                        <span class="hero-stat-divider"></span>
+                        <span>♥ Auto-Save</span>
+                        <span class="hero-stat-divider"></span>
+                        <span>♣ Unlimited Undo</span>
+                    </div>
+                </div>
+                <div class="hero-actions">
+                    <button id="continueSavedBtn" class="hero-btn hidden" type="button">Continue Saved Game</button>
+                    <button id="browseGamesBtn" class="hero-btn ghost" type="button">Browse Games</button>
+                </div>
+            </div>
+            <div class="home-content">
+                <div class="home-main-scroll">
+                    <section class="home-section feature-strip">
+                        <article class="feature-panel large" data-suit="♠">
+                            <p class="eyebrow">Featured Table</p>
+                            <h2>Royal Klondike Hall</h2>
+                            <p>The flagship Solitare Kingdom table — rich sound, premium motion, real helpers, and clean
+                                progression. Your best bet for a polished classic.</p>
+                            <button class="feature-play-btn" data-game="klondike" type="button">Play Now →</button>
+                        </article>
+                        <article class="feature-panel compact" data-suit="♦">
+                            <p class="eyebrow">Daily Run</p>
+                            <h2>Challenge Boards</h2>
+                            <p>Seeded daily challenges, streaks, and sponsored events — coming soon.</p>
+                        </article>
+                    </section>
+
+                    <section class="home-section" id="solitaireSection">
+                        <div class="section-head">
+                            <div>
+                                <p class="eyebrow">Solitaires</p>
+                                <h2>Playable Tables And Variants</h2>
+                            </div>
+                            <span class="section-note">Launch-ready setup flow on every card</span>
+                        </div>
+                        <div class="game-grid" id="gameGrid">
+                            <button class="game-card available" data-game="klondike" type="button">
+                                <span class="card-suit-deco" aria-hidden="true">♠</span>
+                                <span class="game-badge badge-ready">Ready</span>
+                                <strong>Klondike</strong>
+                                <p>Classic stock, waste, foundations, and tableau play with the full premium treatment.
+                                </p>
+                                <span class="card-play-arrow" aria-hidden="true">Play →</span>
+                            </button>
+                            <button class="game-card available" data-game="spider" type="button">
+                                <span class="card-suit-deco" aria-hidden="true">♦</span>
+                                <span class="game-badge badge-ready">Ready</span>
+                                <strong>Spider</strong>
+                                <p>Playable one-suit Spider with ten columns, deal-row stock, and completed-run
+                                    clearing.</p>
+                                <span class="card-play-arrow" aria-hidden="true">Play →</span>
+                            </button>
+                            <button class="game-card available" data-game="freecell" type="button">
+                                <span class="card-suit-deco" aria-hidden="true">♣</span>
+                                <span class="game-badge badge-ready">Ready</span>
+                                <strong>FreeCell</strong>
+                                <p>Open information, precision planning, and chained movement through free cells.</p>
+                                <span class="card-play-arrow" aria-hidden="true">Play →</span>
+                            </button>
+                            <button class="game-card upcoming" data-game="tripeaks" type="button">
+                                <span class="game-badge">Soon</span>
+                                <strong>TriPeaks</strong>
+                                <p>Fast clears, combo pacing, and top-down peak removal with arcade flow.</p>
+                            </button>
+                            <button class="game-card upcoming" data-game="pyramid" type="button">
+                                <span class="game-badge">Soon</span>
+                                <strong>Pyramid</strong>
+                                <p>Match to thirteen, peel the structure down, and read the board efficiently.</p>
+                            </button>
+                            <button class="game-card upcoming" data-game="yukon" type="button">
+                                <span class="game-badge">Soon</span>
+                                <strong>Yukon</strong>
+                                <p>Loose stack movement and dramatic column planning with no stock cycling.</p>
+                            </button>
+                            <button class="game-card upcoming" data-game="canfield" type="button">
+                                <span class="game-badge">Soon</span>
+                                <strong>Canfield</strong>
+                                <p>Tight reserve management, hard odds, and dramatic recovery windows.</p>
+                            </button>
+                            <button class="game-card upcoming" data-game="scorpion" type="button">
+                                <span class="game-badge">Soon</span>
+                                <strong>Scorpion</strong>
+                                <p>Open stack maneuvering and long-form sequence assembly with aggressive movement
+                                    freedom.</p>
+                            </button>
+                        </div>
+                    </section>
+
+                    <section class="home-section">
+                        <div class="section-head">
+                            <div>
+                                <p class="eyebrow">Card And Tabletop</p>
+                                <h2>More Polished Card Rooms</h2>
+                            </div>
+                            <span class="section-note">Roadmap collection</span>
+                        </div>
+                        <div class="game-grid game-grid-wide">
+                            <button class="game-card upcoming" data-game="hearts" type="button">
+                                <span class="game-badge">Roadmap</span>
+                                <strong>Hearts</strong>
+                                <p>Trick-taking with clean scoreboards, table chatter, and card-passing rituals.</p>
+                            </button>
+                            <button class="game-card upcoming" data-game="cribbage" type="button">
+                                <span class="game-badge">Roadmap</span>
+                                <strong>Cribbage</strong>
+                                <p>Pegboard scoring, hand counting, and tuned card table production polish.</p>
+                            </button>
+                            <button class="game-card upcoming" data-game="mahjong" type="button">
+                                <span class="game-badge">Roadmap</span>
+                                <strong>Mahjong</strong>
+                                <p>Tile matching halls, tactile clears, and calmer puzzle pacing inside the kingdom.</p>
+                            </button>
+                        </div>
+                    </section>
+
+                    <section class="home-section">
+                        <div class="section-head">
+                            <div>
+                                <p class="eyebrow">Board Games</p>
+                                <h2>Classic Boards With Premium Presentation</h2>
+                            </div>
+                            <span class="section-note">Expandable hub</span>
+                        </div>
+                        <div class="game-grid game-grid-wide">
+                            <button class="game-card upcoming" data-game="chess" type="button">
+                                <span class="game-badge">Roadmap</span>
+                                <strong>Chess</strong>
+                                <p>Elegant wood-and-gold board styling, move history, and cinematic captures.</p>
+                            </button>
+                            <button class="game-card upcoming" data-game="checkers" type="button">
+                                <span class="game-badge">Roadmap</span>
+                                <strong>Checkers</strong>
+                                <p>Fast board play, crisp jumps, and rich tabletop lighting for casual sessions.</p>
+                            </button>
+                            <button class="game-card upcoming" data-game="backgammon" type="button">
+                                <span class="game-badge">Roadmap</span>
+                                <strong>Backgammon</strong>
+                                <p>Premium bar-and-pip layouts, dice motion, and match-play score handling.</p>
+                            </button>
+                        </div>
+                    </section>
+                </div>
+
+                <aside class="home-rail">
+                    <div class="ad-slot tall">
+                        <p class="eyebrow">Ad Rail</p>
+                        <strong>Production Inventory</strong>
+                        <p>Sticky banner area reserved for partner promos, internal events, or platform campaigns.</p>
+                    </div>
+                    <div class="ad-slot compact">
+                        <p class="eyebrow">Spotlight</p>
+                        <strong>Featured Tournament</strong>
+                        <p>Reserved for daily challenges, seasonal ladders, or cross-promotion cards.</p>
+                    </div>
+                </aside>
+            </div>
+        </div>
+
+        <div id="setupPanel" class="setup-panel" aria-hidden="true">
+            <div class="setup-card">
+                <button id="closeSetupBtn" class="setup-close" type="button" aria-label="Close setup">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M18.3 5.71L12 12l6.3 6.29-1.41 1.41L10.59 13.4 4.29 19.7 2.88 18.29 9.17 12 2.88 5.71 4.29 4.3l6.3 6.29 6.29-6.3z" />
+                    </svg>
+                </button>
+                <p class="eyebrow">Game Setup</p>
+                <h2 id="setupTitle">Klondike</h2>
+                <p id="setupDescription">Classic draw-one Klondike with polished visuals, richer sound, and helper
+                    systems.</p>
+                <div class="setup-options">
+                    <label class="setup-row">
+                        <span>Effects Enabled</span>
+                        <input type="checkbox" id="homeEffectsInput" checked />
+                    </label>
+                    <label class="setup-row">
+                        <span>Sound Enabled</span>
+                        <input type="checkbox" id="homeSoundInput" checked />
+                    </label>
+                    <label class="setup-row">
+                        <span>Reduced Motion</span>
+                        <input type="checkbox" id="homeMotionInput" />
+                    </label>
+                    <label class="setup-row">
+                        <span>Auto Save Session</span>
+                        <input type="checkbox" id="homeAutosaveInput" checked />
+                    </label>
+                </div>
+                <div class="setup-actions">
+                    <button id="startGameBtn" class="hero-btn" type="button">Start Game</button>
+                    <button id="setupResumeBtn" class="hero-btn ghost hidden" type="button">Resume Save</button>
+                </div>
+            </div>
+        </div>
+    </section>
+    <main class="app-shell">
+        <header class="topbar">
+            <div class="brand">
+                <span class="brand-mark" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" role="img">
+                        <path d="M12 2L2 8l10 6 10-6-10-6zm0 8L2 4v12l10 6 10-6V4l-10 6z" />
+                    </svg>
+                </span>
+                <div>
+                    <h1>Solitare Kingdom</h1>
+                    <p id="gameSubtitle">Classic Klondike • Draw 1</p>
+                </div>
+            </div>
+            <div class="stats" aria-live="polite">
+                <div><span>Time</span><strong id="time">00:00</strong></div>
+                <div><span>Moves</span><strong id="moves">0</strong></div>
+                <div><span>Score</span><strong id="score">0</strong></div>
+            </div>
+            <div class="controls" role="group" aria-label="Game controls">
+                <button id="homeBtn" class="icon-btn" title="Home" aria-label="Home">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 3l9 8h-3v10h-5v-6H11v6H6V11H3l9-8z" />
+                    </svg>
+                </button>
+                <button id="newGameBtn" class="icon-btn" title="New Game" aria-label="New Game">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6a6 6 0 11-10.39-4.04L6.2 7.55A8 8 0 1012 5z" />
+                    </svg>
+                </button>
+                <button id="undoBtn" class="icon-btn" title="Undo" aria-label="Undo">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M12 5V1L6 7l6 6V9c3.31 0 6 2.69 6 6 0 1.2-.35 2.31-.96 3.24l1.46 1.46A7.94 7.94 0 0020 15c0-4.42-3.58-8-8-8z" />
+                    </svg>
+                </button>
+                <button id="hintBtn" class="icon-btn hint-btn-ad" title="Hint (watch a short ad)"
+                    aria-label="Hint — watch ad">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M9 21h6v-1H9v1zm3-20a7 7 0 00-4.6 12.27c.54.47 1.24 1.3 1.46 2.73h6.28c.22-1.43.92-2.26 1.46-2.73A7 7 0 0012 1zm-2 13c-.26-1.27-.91-2.05-1.3-2.38A5 5 0 1117 8c0 1.45-.62 2.74-1.7 3.62-.39.33-1.04 1.11-1.3 2.38h-4z" />
+                    </svg>
+                    <span class="hint-ad-badge" aria-hidden="true">AD</span>
+                </button>
+                <button id="autoFinishBtn" class="icon-btn" title="Auto Finish" aria-label="Auto Finish">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M13 4l7 8-7 8v-5H4v-6h9V4zm-9 7h7v2H4v-2z" />
+                    </svg>
+                </button>
+                <button id="soundBtn" class="icon-btn" title="Toggle Sound" aria-label="Toggle Sound">
+                    <svg id="soundOnIcon" viewBox="0 0 24 24">
+                        <path
+                            d="M3 10v4h4l5 5V5L7 10H3zm13.5 2a4.5 4.5 0 00-2.5-4.03v8.06A4.5 4.5 0 0016.5 12zm0-9.5v2.06A9.5 9.5 0 0119 12a9.5 9.5 0 01-2.5 6.44v2.06A11.5 11.5 0 0021 12 11.5 11.5 0 0016.5 2.5z" />
+                    </svg>
+                    <svg id="soundOffIcon" viewBox="0 0 24 24" class="hidden">
+                        <path
+                            d="M16.5 12a4.46 4.46 0 01-.77 2.5l1.45 1.45A6.45 6.45 0 0018.5 12c0-1.53-.53-2.94-1.42-4.05L15.63 9.4c.55.72.87 1.62.87 2.6zM19 12a9.44 9.44 0 01-1.29 4.77l1.46 1.46A11.43 11.43 0 0021 12c0-3.2-1.31-6.09-3.42-8.17l-1.43 1.43A9.46 9.46 0 0119 12zM2.1 2.1L.7 3.5 5 7.8V14h4l5 5v-6.2l6.5 6.5 1.4-1.4L2.1 2.1z" />
+                    </svg>
+                </button>
+                <button id="settingsBtn" class="icon-btn" title="Settings" aria-label="Settings">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 00.12-.63l-1.92-3.32a.5.5 0 00-.6-.22l-2.39.96a7.06 7.06 0 00-1.63-.94l-.36-2.54A.5.5 0 0013.9 2h-3.8a.5.5 0 00-.49.42l-.36 2.54c-.58.23-1.12.54-1.63.94l-2.39-.96a.5.5 0 00-.6.22L2.71 8.48a.5.5 0 00.12.63l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 00-.12.63l1.92 3.32c.13.23.4.32.64.22l2.35-.95c.5.4 1.06.73 1.67.97l.36 2.5c.04.24.25.42.49.42h3.8c.24 0 .45-.18.49-.42l.36-2.5c.61-.24 1.17-.57 1.67-.97l2.35.95c.24.1.51.01.64-.22l1.92-3.32a.5.5 0 00-.12-.63l-2.03-1.58zM12 15.5A3.5 3.5 0 1112 8a3.5 3.5 0 010 7.5z" />
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <section class="board" id="board">
+            <div class="row top-row">
+                <div id="freecells" class="freecells hidden"></div>
+                <div class="pile-zone" id="stockZone">
+                    <div class="pile-label">Stock</div>
+                    <div class="pile stock" data-pile-type="stock" id="stock"></div>
+                </div>
+                <div class="pile-zone" id="wasteZone">
+                    <div class="pile-label">Waste</div>
+                    <div class="pile waste" data-pile-type="waste" id="waste"></div>
+                </div>
+                <div class="spacer"></div>
+                <div class="foundations" id="foundations"></div>
+            </div>
+            <div class="row tableau-row" id="tableau"></div>
+        </section>
+
+        <div class="message" id="message"></div>
+
+        <aside id="settingsPanel" class="settings-panel" aria-hidden="true">
+            <h2>Game Settings</h2>
+            <label class="setting-row">
+                <span>Sound Volume</span>
+                <input type="range" id="volumeInput" min="0" max="100" step="1" value="80" />
+            </label>
+            <label class="setting-row">
+                <span>Effects</span>
+                <input type="checkbox" id="effectsInput" checked />
+            </label>
+            <label class="setting-row">
+                <span>Reduced Motion</span>
+                <input type="checkbox" id="reducedMotionInput" />
+            </label>
+            <label class="setting-row">
+                <span>Auto Save</span>
+                <input type="checkbox" id="autosaveInput" checked />
+            </label>
+            <button id="clearSaveBtn" class="settings-action">Clear Saved Game</button>
+        </aside>
+    </main>
+
+    <template id="cardTemplate">
+        <article class="card" draggable="false">
+            <div class="card-face card-front">
+                <div class="corner top">
+                    <span class="rank"></span>
+                    <span class="suit"></span>
+                </div>
+                <div class="pip"></div>
+                <div class="corner bottom">
+                    <span class="rank"></span>
+                    <span class="suit"></span>
+                </div>
+            </div>
+            <div class="card-face card-back"></div>
+        </article>
+    </template>
+
+    <div id="adInterstitial" class="ad-interstitial hidden" role="dialog" aria-modal="true"
+        aria-label="Watch ad for hint">
+        <div class="ad-interstitial-backdrop"></div>
+        <div class="ad-interstitial-card">
+            <div class="ad-interstitial-bar">
+                <span class="ad-tag">Ad</span>
+                <span class="ad-timer" id="adTimer">5</span>
+            </div>
+            <div class="ad-creative">
+                <span class="ad-creative-icon" aria-hidden="true">♠</span>
+                <p class="eyebrow">Upgrade</p>
+                <strong class="ad-creative-title">Kingdom Premium</strong>
+                <p class="ad-creative-copy">Remove all ads, unlock unlimited hints, and get exclusive card backs for
+                    just $2.99/month.</p>
+                <button class="ad-cta-btn" type="button" tabindex="-1" aria-hidden="true">Get Premium</button>
+            </div>
+            <div class="ad-interstitial-footer">
+                <span class="ad-hint-label">Watch ad to unlock hint</span>
+                <button id="adSkipBtn" class="ad-skip-btn" type="button" disabled>Skip in <span
+                        id="adSkipCount">5</span>s</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
