@@ -66,6 +66,12 @@
             description: "Trick-taking tables with score history and elegant round flow are on the roadmap.",
             available: false,
         },
+        secretword: {
+            name: "Secret Word",
+            subtitle: "Secret Word • Word Puzzle",
+            description: "Guess the hidden 5-letter word in 6 tries. After each guess the tiles reveal which letters are correct, present, or absent.",
+            available: true,
+        },
         cribbage: {
             name: "Cribbage",
             subtitle: "Cribbage • Roadmap",
@@ -335,6 +341,42 @@
             setTimeout(() => this.beep("triangle", 760, 0.2, 0.07, 90, 0), 120);
             setTimeout(() => this.beep("triangle", 920, 0.26, 0.07, 70, 0.2), 250);
         },
+        swKey() {
+            this.beep("triangle", 430, 0.055, 0.025, 18, 0);
+        },
+        swDelete() {
+            this.beep("sine", 290, 0.045, 0.02, -18, 0);
+        },
+        swInvalid() {
+            this.beep("sawtooth", 170, 0.1, 0.042, -35, 0);
+            setTimeout(() => this.beep("sine", 140, 0.08, 0.03, -22, 0), 48);
+        },
+        swReveal(tileState, nth) {
+            const freqs = {
+                correct: [590, 630, 670, 730, 800],
+                present: [440, 470, 500, 530, 560],
+                absent:  [250, 240, 230, 220, 215],
+            };
+            const types = { correct: "triangle", present: "sine", absent: "square" };
+            const gains = { correct: 0.062, present: 0.05, absent: 0.028 };
+            const idx = Math.max(0, Math.min(nth, 4));
+            const f = (freqs[tileState] || freqs.absent)[idx];
+            const t = types[tileState] || "square";
+            const g = gains[tileState] || 0.028;
+            const glide = tileState === "correct" ? 55 : tileState === "present" ? 18 : -10;
+            this.beep(t, f, 0.15, g, glide, (idx - 2) * 0.18);
+        },
+        swWin() {
+            this.beep("triangle", 660, 0.2, 0.08, 165, -0.22);
+            setTimeout(() => this.beep("triangle", 800, 0.24, 0.08, 120, 0), 140);
+            setTimeout(() => this.beep("triangle", 1000, 0.3, 0.08, 85, 0.22), 290);
+            setTimeout(() => this.beep("sine", 1350, 0.22, 0.065, 45, 0), 460);
+        },
+        swLose() {
+            this.beep("sawtooth", 380, 0.13, 0.058, -65, 0);
+            setTimeout(() => this.beep("sawtooth", 290, 0.16, 0.058, -85, 0), 160);
+            setTimeout(() => this.beep("sine", 200, 0.2, 0.062, -105, 0), 340);
+        },
     };
 
     function popParticlesAt(x, y, color = "#ffe09e", count = 10, spread = 74) {
@@ -526,6 +568,11 @@
         applyHomeSetupToState();
         state.currentGame = state.setupGame;
         updateSubtitle();
+        if (state.currentGame === "secretword") {
+            hideHomeScreen();
+            secretWord.launch();
+            return;
+        }
         if (useSavedGame && hasSavedGame() && loadSavedGame()) {
             render();
         } else {
@@ -2334,4 +2381,547 @@
     showHomeScreen();
     registerServiceWorker();
     initUnityAds();
+
+    // ──────────────────────────────────────────────────────────────
+    //  SECRET WORD GAME
+    // ──────────────────────────────────────────────────────────────
+
+    const SW_SAVE_KEY = "sw-stats-v1";
+
+    /* ~290 curated 5-letter target / valid words */
+    const SW_WORDS = [
+        "ABOUT","ABOVE","ABUSE","ACTOR","ACUTE","ADMIT","ADOPT","ADULT","AFTER","AGAIN",
+        "AGENT","AGREE","AHEAD","ALARM","ALBUM","ALERT","ALIEN","ALIKE","ALIVE","ALLEY",
+        "ALLOW","ALONE","ALONG","ALPHA","ALTER","ANGLE","ANGRY","ANKLE","APART","APPLE",
+        "APPLY","APRON","ARGUE","ARISE","ARMOR","ARROW","ASIDE","ASSET","AVOID","AWAKE",
+        "AWARD","AWARE","AWFUL","BASIC","BEACH","BEARD","BEAST","BEGIN","BELOW","BENCH",
+        "BERRY","BIRTH","BLACK","BLADE","BLAME","BLANK","BLAST","BLAZE","BLEED","BLEND",
+        "BLESS","BLIND","BLOCK","BLOOD","BLOOM","BLOWN","BOARD","BONUS","BOUND","BRAIN",
+        "BRAND","BRAVE","BREAD","BREAK","BRICK","BRIDE","BRIEF","BRING","BROAD","BROWN",
+        "BRUSH","BUILD","BUILT","BURST","BUYER","CANDY","CARRY","CAUSE","CHAIN","CHAIR",
+        "CHALK","CHARM","CHASE","CHEAP","CHECK","CHEEK","CHEER","CHESS","CHEST","CHIEF",
+        "CHILD","CHINA","CHOSE","CIVIL","CLAIM","CLASS","CLEAN","CLEAR","CLIMB","CLOCK",
+        "CLOSE","CLOUD","COACH","COAST","COLOR","CORAL","COULD","COUNT","COURT","COVER",
+        "CRAFT","CRANE","CRASH","CRAZY","CREAM","CREEK","CRIME","CRISP","CROSS","CROWD",
+        "CROWN","CRUSH","CURVE","DAILY","DANCE","DELTA","DENSE","DEPTH","DEVIL","DIARY",
+        "DIRTY","DOUBT","DOUGH","DRAFT","DRAIN","DRAMA","DRAWN","DREAM","DRESS","DRIED",
+        "DRIFT","DRINK","DRIVE","DROVE","DROWN","EAGLE","EARLY","EARTH","EIGHT","ELITE",
+        "EMPTY","ENEMY","ENJOY","ENTER","EQUAL","ERROR","EVENT","EVERY","EXACT","EXIST",
+        "EXTRA","FAINT","FAIRY","FAITH","FALSE","FANCY","FAULT","FEAST","FENCE","FEVER",
+        "FIELD","FIFTH","FIFTY","FIGHT","FINAL","FIRST","FIXED","FLAME","FLASH","FLEET",
+        "FLESH","FLOCK","FLOOD","FLOOR","FLOUR","FOCUS","FORCE","FORGE","FORTH","FOUND",
+        "FRAME","FRANK","FRESH","FRONT","FROST","FRUIT","FULLY","FUNNY","GHOST","GIANT",
+        "GIVEN","GLADE","GLARE","GLOOM","GLOVE","GRACE","GRADE","GRAND","GRANT","GRASP",
+        "GRAVE","GREAT","GREED","GREEN","GREET","GRIEF","GRIND","GROUP","GROVE","GROWN",
+        "GUARD","GUEST","GUIDE","GUISE","HABIT","HAPPY","HARSH","HAVEN","HEART","HEAVY",
+        "IDEAL","IMAGE","IMPLY","INDEX","INPUT","ISSUE","IVORY","JEWEL","JOINT","JUDGE",
+        "JUICE","JUICY","JUMBO","KNIFE","KNOCK","KNOWN","LABEL","LANCE","LARGE","LASER",
+        "LAYER","LEARN","LEDGE","LEMON","LEVEL","LIGHT","LIMIT","LINEN","LOCAL","LODGE",
+        "LOGIC","LOOSE","LOVER","LOWER","LUCKY","LUNAR","MAGIC","MAJOR","MAKER","MAPLE",
+        "MANOR","MARCH","MARSH","MATCH","METAL","MIGHT","MINOR","MIXED","MONEY","MONTH",
+        "MORAL","MOTOR","MOUSE","MOUTH","MURAL","MUSIC","NAIVE","NIGHT","NOISE","NOBLE",
+        "NORTH","NOTED","NOVEL","NURSE","OCCUR","OCEAN","OPERA","ORDER","OUTER","OWNER",
+        "OZONE","PAINT","PANEL","PAPER","PARTY","PATCH","PEACE","PEARL","PEDAL","PERCH",
+        "PHASE","PHONE","PHOTO","PIANO","PILOT","PIXEL","PLACE","PLAIN","PLANK","PLANT",
+        "PLUCK","PLUMB","POLAR","PORCH","POWER","PRESS","PRICE","PRIDE","PRIME","PRINT",
+        "PRIZE","PROBE","PROOF","PROSE","PROUD","PROVE","PROWL","PULSE","PURSE","QUEEN",
+        "QUEST","QUICK","QUIET","QUOTE","RADAR","RADIO","RAISE","RANGE","RAPID","REACH",
+        "READY","REALM","REBEL","REIGN","RELAX","REPAY","REPLY","RIDER","RIDGE","RIGHT",
+        "RISKY","RIVAL","RIVER","ROBOT","ROCKY","ROUGH","ROUND","ROUTE","ROWDY","ROYAL",
+        "RULER","RUSTY","SAVOR","SCENE","SCOPE","SCORE","SCOUT","SENSE","SERUM","SHADE",
+        "SHAFT","SHAKE","SHAME","SHAPE","SHARE","SHARP","SHELL","SHIFT","SHINE","SHOCK",
+        "SHORE","SHOUT","SHOVE","SIGHT","SKILL","SLICE","SLIDE","SLOPE","SLOTH","SMILE",
+        "SNACK","SNAKE","SOLAR","SOLID","SOLVE","SOUTH","SPACE","SPARK","SPEAK","SPEED",
+        "SPELL","SPEND","SPICE","SPIKE","SPINE","SPOKE","SPORT","SQUAD","STAFF","STAGE",
+        "STAIR","STAKE","STALL","STAMP","STAND","STARK","START","STATE","STEAM","STEEL",
+        "STEEP","STERN","STONE","STORE","STORM","STORY","STOVE","STRAP","STRAW","STRAY",
+        "STRIP","STUDY","SUGAR","SUNNY","SUPER","SWAMP","SWEAR","SWEEP","SWEET","SWIFT",
+        "SWING","SWORD","TABLE","TASTE","TEETH","TEMPO","THANK","THICK","THING","THINK",
+        "THORN","TIGER","TIMER","TIRED","TITAN","TITLE","TORCH","TOTAL","TOUCH","TOWEL",
+        "TOWER","TRACE","TRACK","TRADE","TRAIL","TRAIN","TRAIT","TREAD","TREAT","TREND",
+        "TRIAL","TRIBE","TRICK","TRIED","TRUCE","TRUNK","TRUST","TRUTH","TUNIC","TURBO",
+        "TWICE","TWIST","ULTRA","UNDER","UNION","UNITY","UNTIL","UPPER","URBAN","VALOR",
+        "VALVE","VAULT","VENOM","VERSE","VIGOR","VIRAL","VOICE","VOTER","WRATH","WRECK",
+        "WRIST","WROTE","YACHT","YOUTH","ZEBRA","BRISK","CLAMP","CLASP","CLEFT","CLUNK",
+        "DWARF","FLECK","FLINT","GLYPH","GLINT","GROUT","GRUNT","JOUST","PLEAT","PRISM",
+        "PRONG","QUIRK","SCALD","SCALP","SKIMP","SLUMP","SPASM","SPUNK","STOIC","STOMP",
+        "STUMP","STUNT","SWINE","TALON","TIARA","TIDAL","TIMID","TONIC","TOXIC","TRYST",
+        "TULIP","TWIRL","ULCER","UNDUE","UNIFY","WALTZ","WHIRL","SWIRL","BLUNT","BLISS",
+    ];
+
+    const SW_VALID = new Set(SW_WORDS);
+
+    const secretWord = {
+        _KB_ROWS: [
+            ["Q","W","E","R","T","Y","U","I","O","P"],
+            ["A","S","D","F","G","H","J","K","L"],
+            ["ENTER","Z","X","C","V","B","N","M","⌫"],
+        ],
+        _WIN_MSGS: ["Genius!","Magnificent!","Impressive!","Splendid!","Great!","Phew!"],
+        _st: null,
+        _tiles: [],
+        _keyEls: {},
+        _toastTimer: null,
+        _boundKeydown: null,
+        _built: false,
+
+        launch() {
+            const scr = document.getElementById("swScreen");
+            scr.classList.remove("hidden");
+            this._syncSoundIcons();
+            if (!this._built) {
+                this._buildBoard();
+                this._buildKeyboard();
+                this._bindEvents();
+                this._built = true;
+            }
+            this._newGame();
+        },
+
+        _hide() {
+            document.getElementById("swScreen").classList.add("hidden");
+        },
+
+        _buildBoard() {
+            const board = document.getElementById("swBoard");
+            board.innerHTML = "";
+            this._tiles = [];
+            for (let r = 0; r < 6; r += 1) {
+                const rowEl = document.createElement("div");
+                rowEl.className = "sw-row";
+                rowEl.setAttribute("role", "row");
+                const rowTiles = [];
+                for (let c = 0; c < 5; c += 1) {
+                    const tile = document.createElement("div");
+                    tile.className = "sw-tile";
+                    tile.dataset.state = "empty";
+                    tile.setAttribute("role", "cell");
+                    rowEl.appendChild(tile);
+                    rowTiles.push(tile);
+                }
+                board.appendChild(rowEl);
+                this._tiles.push(rowTiles);
+            }
+        },
+
+        _buildKeyboard() {
+            const kb = document.getElementById("swKeyboard");
+            kb.innerHTML = "";
+            this._keyEls = {};
+            for (const row of this._KB_ROWS) {
+                const rowDiv = document.createElement("div");
+                rowDiv.className = "sw-kb-row";
+                for (const key of row) {
+                    const btn = document.createElement("button");
+                    btn.className = "sw-key";
+                    btn.type = "button";
+                    btn.textContent = key;
+                    btn.dataset.key = key;
+                    if (key === "ENTER" || key === "⌫") {
+                        btn.classList.add("sw-key-wide");
+                    }
+                    btn.addEventListener("click", () => this.handleKey(key));
+                    rowDiv.appendChild(btn);
+                    if (key !== "ENTER" && key !== "⌫") {
+                        this._keyEls[key] = btn;
+                    }
+                }
+                kb.appendChild(rowDiv);
+            }
+        },
+
+        _newGame() {
+            const target = SW_WORDS[Math.floor(Math.random() * SW_WORDS.length)];
+            this._st = {
+                target,
+                guesses: [],
+                current: "",
+                gameOver: false,
+                won: false,
+                row: 0,
+                keyStates: {},
+            };
+            for (let r = 0; r < 6; r += 1) {
+                for (let c = 0; c < 5; c += 1) {
+                    const t = this._tiles[r][c];
+                    t.className = "sw-tile";
+                    t.dataset.state = "empty";
+                    t.textContent = "";
+                }
+            }
+            for (const keyEl of Object.values(this._keyEls)) {
+                keyEl.dataset.state = "";
+            }
+            document.getElementById("swStatsModal").classList.add("hidden");
+            audio.newGame();
+            this._showToast("Guess the 5-letter word!", 1900);
+        },
+
+        handleKey(key) {
+            if (this._st.gameOver) {
+                if (key === "ENTER") {
+                    this._newGame();
+                }
+                return;
+            }
+            if (key === "⌫" || key === "BACKSPACE") {
+                this._deleteLetter();
+            } else if (key === "ENTER") {
+                this._submitGuess();
+            } else if (/^[A-Z]$/.test(key)) {
+                this._addLetter(key);
+            }
+        },
+
+        _addLetter(letter) {
+            if (this._st.current.length >= 5) {
+                return;
+            }
+            this._st.current += letter;
+            const col = this._st.current.length - 1;
+            const tile = this._tiles[this._st.row][col];
+            tile.textContent = letter;
+            tile.dataset.state = "tbd";
+            tile.classList.remove("sw-pop");
+            void tile.offsetWidth;
+            tile.classList.add("sw-pop");
+            tile.addEventListener("animationend", () => tile.classList.remove("sw-pop"), { once: true });
+            audio.swKey();
+        },
+
+        _deleteLetter() {
+            if (!this._st.current.length) {
+                return;
+            }
+            const col = this._st.current.length - 1;
+            const tile = this._tiles[this._st.row][col];
+            tile.textContent = "";
+            tile.dataset.state = "empty";
+            this._st.current = this._st.current.slice(0, -1);
+            audio.swDelete();
+        },
+
+        _submitGuess() {
+            const guess = this._st.current;
+            if (guess.length < 5) {
+                this._showToast("Not enough letters", 1100);
+                this._shakeRow(this._st.row);
+                audio.swInvalid();
+                return;
+            }
+            if (!SW_VALID.has(guess)) {
+                this._showToast("Not in word list", 1100);
+                this._shakeRow(this._st.row);
+                audio.swInvalid();
+                return;
+            }
+            const states = this._scoreGuess(guess, this._st.target);
+            this._st.guesses.push(guess);
+            const rowIdx = this._st.row;
+            this._st.row += 1;
+            this._st.current = "";
+
+            this._revealRow(rowIdx, states, () => {
+                this._updateKeyboard(guess, states);
+                const won = states.every((s) => s === "correct");
+                if (won || this._st.row >= 6) {
+                    this._st.gameOver = true;
+                    this._st.won = won;
+                    this._updateStats(won, rowIdx + 1);
+                    if (won) {
+                        this._bounceRow(rowIdx);
+                        const msg = this._WIN_MSGS[Math.min(rowIdx, this._WIN_MSGS.length - 1)];
+                        setTimeout(() => {
+                            this._showToast(msg, 2400);
+                            const rows = document.querySelectorAll(".sw-row");
+                            const winRow = rows[rowIdx];
+                            if (winRow && state.effectsEnabled) {
+                                const rect = winRow.getBoundingClientRect();
+                                for (let i = 0; i < 5; i += 1) {
+                                    const cx = rect.left + (rect.width / 5) * (i + 0.5);
+                                    const cy = rect.top + rect.height / 2;
+                                    setTimeout(() => {
+                                        const colors = ["#f4cc75","#5aad50","#d4b830","#7dcf70","#ffe09e"];
+                                        popParticlesAt(cx, cy, colors[i % colors.length], 9, 62);
+                                    }, i * 95);
+                                }
+                            }
+                            audio.swWin();
+                            setTimeout(() => this._openStats(), 2500);
+                        }, 320);
+                    } else {
+                        setTimeout(() => {
+                            this._showToast(`The word was ${this._st.target}`, 4200);
+                            audio.swLose();
+                            setTimeout(() => this._openStats(), 2700);
+                        }, 420);
+                    }
+                }
+            });
+        },
+
+        _scoreGuess(guess, target) {
+            const result = Array(5).fill("absent");
+            const tc = target.split("");
+            const gc = guess.split("");
+            for (let i = 0; i < 5; i += 1) {
+                if (gc[i] === tc[i]) {
+                    result[i] = "correct";
+                    tc[i] = null;
+                    gc[i] = null;
+                }
+            }
+            for (let i = 0; i < 5; i += 1) {
+                if (gc[i] === null) {
+                    continue;
+                }
+                const j = tc.indexOf(gc[i]);
+                if (j !== -1) {
+                    result[i] = "present";
+                    tc[j] = null;
+                }
+            }
+            return result;
+        },
+
+        _revealRow(rowIdx, states, onDone) {
+            const tiles = this._tiles[rowIdx];
+            let revealed = 0;
+            const flipDelay = state.reducedMotion ? 0 : 300;
+            tiles.forEach((tile, i) => {
+                setTimeout(() => {
+                    audio.swReveal(states[i], i);
+                    if (state.reducedMotion) {
+                        tile.dataset.state = states[i];
+                        revealed += 1;
+                        if (revealed === 5 && onDone) {
+                            onDone();
+                        }
+                        return;
+                    }
+                    tile.classList.add("sw-flip-out");
+                    tile.addEventListener("animationend", () => {
+                        tile.classList.remove("sw-flip-out");
+                        tile.dataset.state = states[i];
+                        tile.classList.add("sw-flip-in");
+                        tile.addEventListener("animationend", () => {
+                            tile.classList.remove("sw-flip-in");
+                            revealed += 1;
+                            if (revealed === 5 && onDone) {
+                                onDone();
+                            }
+                        }, { once: true });
+                    }, { once: true });
+                }, i * flipDelay);
+            });
+        },
+
+        _shakeRow(rowIdx) {
+            const rows = document.querySelectorAll(".sw-row");
+            const row = rows[rowIdx];
+            if (!row) {
+                return;
+            }
+            row.classList.remove("sw-shake");
+            void row.offsetWidth;
+            row.classList.add("sw-shake");
+            row.addEventListener("animationend", () => row.classList.remove("sw-shake"), { once: true });
+        },
+
+        _bounceRow(rowIdx) {
+            const tiles = this._tiles[rowIdx];
+            const delay = state.reducedMotion ? 0 : 100;
+            tiles.forEach((tile, i) => {
+                setTimeout(() => {
+                    tile.classList.add("sw-bounce");
+                    tile.addEventListener("animationend", () => tile.classList.remove("sw-bounce"), { once: true });
+                }, i * delay);
+            });
+        },
+
+        _updateKeyboard(guess, states) {
+            const priority = { correct: 3, present: 2, absent: 1 };
+            for (let i = 0; i < 5; i += 1) {
+                const letter = guess[i];
+                const keyEl = this._keyEls[letter];
+                if (!keyEl) {
+                    continue;
+                }
+                const curPri = priority[keyEl.dataset.state] || 0;
+                const newPri = priority[states[i]] || 0;
+                if (newPri > curPri) {
+                    keyEl.dataset.state = states[i];
+                }
+            }
+        },
+
+        _showToast(msg, duration = 1500) {
+            const toast = document.getElementById("swToast");
+            if (!toast) {
+                return;
+            }
+            if (this._toastTimer) {
+                clearTimeout(this._toastTimer);
+            }
+            toast.textContent = msg;
+            toast.classList.remove("sw-toast-hide", "sw-toast-show");
+            void toast.offsetWidth;
+            toast.classList.add("sw-toast-show");
+            this._toastTimer = setTimeout(() => {
+                toast.classList.remove("sw-toast-show");
+                toast.classList.add("sw-toast-hide");
+                toast.addEventListener("animationend", () => {
+                    toast.classList.remove("sw-toast-hide");
+                    toast.textContent = "";
+                }, { once: true });
+            }, duration);
+        },
+
+        _openStats() {
+            this._renderStats();
+            document.getElementById("swStatsModal").classList.remove("hidden");
+            audio.uiOpen();
+        },
+
+        _closeStats() {
+            document.getElementById("swStatsModal").classList.add("hidden");
+            audio.uiClose();
+        },
+
+        _renderStats() {
+            const s = this._loadStatsData();
+            document.getElementById("swStatPlayed").textContent = s.played;
+            document.getElementById("swStatWinPct").textContent = s.played ? Math.round((s.wins / s.played) * 100) : 0;
+            document.getElementById("swStatStreak").textContent = s.streak;
+            document.getElementById("swStatBest").textContent = s.best;
+            const dist = document.getElementById("swDistribution");
+            const maxVal = Math.max(1, ...s.dist);
+            const currentGuess = this._st.won ? this._st.guesses.length - 1 : -1;
+            dist.innerHTML = s.dist.map((count, i) => {
+                const pct = Math.max(6, Math.round((count / maxVal) * 100));
+                const active = currentGuess === i ? " sw-dist-bar-active" : "";
+                return `<div class="sw-dist-row">
+                    <span class="sw-dist-label">${i + 1}</span>
+                    <div class="sw-dist-bar${active}" style="width:${pct}%"><span>${count}</span></div>
+                </div>`;
+            }).join("");
+            const wordEl = document.getElementById("swModalWord");
+            if (this._st.gameOver && !this._st.won) {
+                wordEl.textContent = `The word was: ${this._st.target}`;
+                wordEl.classList.remove("hidden");
+            } else {
+                wordEl.classList.add("hidden");
+            }
+        },
+
+        _loadStatsData() {
+            const raw = localStorage.getItem(SW_SAVE_KEY);
+            if (!raw) {
+                return { played: 0, wins: 0, streak: 0, best: 0, dist: [0, 0, 0, 0, 0, 0] };
+            }
+            try {
+                const parsed = JSON.parse(raw);
+                if (!Array.isArray(parsed.dist) || parsed.dist.length !== 6) {
+                    parsed.dist = [0, 0, 0, 0, 0, 0];
+                }
+                return parsed;
+            } catch {
+                return { played: 0, wins: 0, streak: 0, best: 0, dist: [0, 0, 0, 0, 0, 0] };
+            }
+        },
+
+        _updateStats(won, guessCount) {
+            const s = this._loadStatsData();
+            s.played += 1;
+            if (won) {
+                s.wins += 1;
+                s.streak += 1;
+                s.best = Math.max(s.best || 0, s.streak);
+                s.dist[Math.min(guessCount - 1, 5)] += 1;
+            } else {
+                s.streak = 0;
+            }
+            localStorage.setItem(SW_SAVE_KEY, JSON.stringify(s));
+        },
+
+        _syncSoundIcons() {
+            const on = document.getElementById("swSoundOnIcon");
+            const off = document.getElementById("swSoundOffIcon");
+            if (on) {
+                on.classList.toggle("hidden", state.muted);
+            }
+            if (off) {
+                off.classList.toggle("hidden", !state.muted);
+            }
+        },
+
+        _bindEvents() {
+            document.getElementById("swHomeBtn").addEventListener("click", () => {
+                this._hide();
+                showHomeScreen();
+            });
+
+            document.getElementById("swNewGameBtn").addEventListener("click", () => {
+                if (!this._st.gameOver) {
+                    this._showToast("Starting new game…", 700);
+                    setTimeout(() => this._newGame(), 700);
+                } else {
+                    this._newGame();
+                }
+            });
+
+            document.getElementById("swStatsBtn").addEventListener("click", () => {
+                this._openStats();
+            });
+
+            document.getElementById("swStatsCloseBtn").addEventListener("click", () => {
+                this._closeStats();
+            });
+
+            document.getElementById("swStatsModal").querySelector(".sw-modal-backdrop")
+                .addEventListener("click", () => this._closeStats());
+
+            document.getElementById("swModalNewBtn").addEventListener("click", () => {
+                this._closeStats();
+                this._newGame();
+            });
+
+            document.getElementById("swModalHomeBtn").addEventListener("click", () => {
+                this._closeStats();
+                this._hide();
+                showHomeScreen();
+            });
+
+            document.getElementById("swSoundBtn").addEventListener("click", () => {
+                state.muted = !state.muted;
+                this._syncSoundIcons();
+                el.soundOnIcon.classList.toggle("hidden", state.muted);
+                el.soundOffIcon.classList.toggle("hidden", !state.muted);
+                saveSettings();
+                if (!state.muted) {
+                    audio.uiOpen();
+                }
+            });
+
+            this._boundKeydown = (ev) => {
+                if (document.getElementById("swScreen").classList.contains("hidden")) {
+                    return;
+                }
+                if (ev.ctrlKey || ev.altKey || ev.metaKey) {
+                    return;
+                }
+                if (ev.key === "Backspace") {
+                    ev.preventDefault();
+                    this.handleKey("⌫");
+                } else if (ev.key === "Enter") {
+                    ev.preventDefault();
+                    this.handleKey("ENTER");
+                } else if (/^[a-zA-Z]$/.test(ev.key)) {
+                    this.handleKey(ev.key.toUpperCase());
+                }
+            };
+            document.addEventListener("keydown", this._boundKeydown);
+        },
+    };
+
 })();
