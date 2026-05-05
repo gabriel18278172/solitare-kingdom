@@ -137,6 +137,13 @@
                                 <p>Open information, precision planning, and chained movement through free cells.</p>
                                 <span class="card-play-arrow" aria-hidden="true">Play →</span>
                             </button>
+                            <button class="game-card available" data-game="secretword" type="button">
+                                <span class="card-suit-deco" aria-hidden="true">Aa</span>
+                                <span class="game-badge badge-ready">Ready</span>
+                                <strong>Secret Word</strong>
+                                <p>Guess the hidden 5-letter word in 6 tries. Tiles reveal correct, present, and absent letters.</p>
+                                <span class="card-play-arrow" aria-hidden="true">Play →</span>
+                            </button>
                             <button class="game-card upcoming" data-game="tripeaks" type="button">
                                 <span class="game-badge">Soon</span>
                                 <strong>TriPeaks</strong>
@@ -421,6 +428,65 @@
             </div>
         </div>
     </div>
+
+    <!-- ── Secret Word Game Screen ───────────────────────────────── -->
+    <section id="swScreen" class="sw-screen hidden" aria-label="Secret Word game">
+        <div class="sw-shell">
+            <header class="sw-hdr">
+                <div class="sw-hdr-side sw-hdr-left">
+                    <button id="swHomeBtn" class="icon-btn" title="Back to Home" aria-label="Back to Home">
+                        <svg viewBox="0 0 24 24"><path d="M12 3l9 8h-3v10h-5v-6H11v6H6V11H3l9-8z"/></svg>
+                    </button>
+                </div>
+                <div class="sw-hdr-mid">
+                    <p class="eyebrow">Word Puzzle</p>
+                    <h1 class="sw-logo">Secret Word</h1>
+                </div>
+                <div class="sw-hdr-side sw-hdr-right">
+                    <button id="swNewGameBtn" class="icon-btn" title="New Game" aria-label="New Game">
+                        <svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6a6 6 0 11-10.39-4.04L6.2 7.55A8 8 0 1012 5z"/></svg>
+                    </button>
+                    <button id="swStatsBtn" class="icon-btn" title="Statistics" aria-label="Statistics">
+                        <svg viewBox="0 0 24 24"><path d="M5 9h2v11H5zm4-4h2v15H9zm4 7h2v8h-2zm4-3h2v11h-2z"/></svg>
+                    </button>
+                    <button id="swSoundBtn" class="icon-btn" title="Toggle Sound" aria-label="Toggle Sound">
+                        <svg id="swSoundOnIcon" viewBox="0 0 24 24"><path d="M3 10v4h4l5 5V5L7 10H3zm13.5 2a4.5 4.5 0 00-2.5-4.03v8.06A4.5 4.5 0 0016.5 12zm0-9.5v2.06A9.5 9.5 0 0119 12a9.5 9.5 0 01-2.5 6.44v2.06A11.5 11.5 0 0021 12 11.5 11.5 0 0016.5 2.5z"/></svg>
+                        <svg id="swSoundOffIcon" viewBox="0 0 24 24" class="hidden"><path d="M16.5 12a4.46 4.46 0 01-.77 2.5l1.45 1.45A6.45 6.45 0 0018.5 12c0-1.53-.53-2.94-1.42-4.05L15.63 9.4c.55.72.87 1.62.87 2.6zM19 12a9.44 9.44 0 01-1.29 4.77l1.46 1.46A11.43 11.43 0 0021 12c0-3.2-1.31-6.09-3.42-8.17l-1.43 1.43A9.46 9.46 0 0119 12zM2.1 2.1L.7 3.5 5 7.8V14h4l5 5v-6.2l6.5 6.5 1.4-1.4L2.1 2.1z"/></svg>
+                    </button>
+                </div>
+            </header>
+
+            <div id="swToast" class="sw-toast" role="status" aria-live="assertive" aria-atomic="true"></div>
+
+            <div class="sw-game-area">
+                <div id="swBoard" class="sw-board" role="grid" aria-label="Letter grid" aria-live="polite"></div>
+                <div id="swKeyboard" class="sw-keyboard" role="group" aria-label="On-screen keyboard"></div>
+            </div>
+        </div>
+
+        <!-- Statistics / Result Modal -->
+        <div id="swStatsModal" class="sw-modal hidden" role="dialog" aria-modal="true" aria-labelledby="swStatsTitle">
+            <div class="sw-modal-backdrop"></div>
+            <div class="sw-modal-card">
+                <button id="swStatsCloseBtn" class="icon-btn sw-modal-close" aria-label="Close statistics">
+                    <svg viewBox="0 0 24 24"><path d="M18.3 5.71L12 12l6.3 6.29-1.41 1.41L10.59 13.4 4.29 19.7 2.88 18.29 9.17 12 2.88 5.71 4.29 4.3l6.3 6.29 6.29-6.3z"/></svg>
+                </button>
+                <p class="eyebrow" style="text-align:center;margin-bottom:4px">Results</p>
+                <h2 id="swStatsTitle" class="sw-modal-title">Statistics</h2>
+                <div class="sw-stats-row">
+                    <div class="sw-stat"><strong id="swStatPlayed">0</strong><span>Played</span></div>
+                    <div class="sw-stat"><strong id="swStatWinPct">0</strong><span>Win %</span></div>
+                    <div class="sw-stat"><strong id="swStatStreak">0</strong><span>Streak</span></div>
+                    <div class="sw-stat"><strong id="swStatBest">0</strong><span>Best</span></div>
+                </div>
+                <p class="sw-dist-title">Guess Distribution</p>
+                <div id="swDistribution" class="sw-distribution"></div>
+                <div id="swModalWord" class="sw-modal-word hidden"></div>
+                <button id="swModalNewBtn" class="hero-btn sw-modal-btn">Play Again</button>
+                <button id="swModalHomeBtn" class="hero-btn ghost sw-modal-btn">Back to Home</button>
+            </div>
+        </div>
+    </section>
 
     <script src="app.js"></script>
 </body>
