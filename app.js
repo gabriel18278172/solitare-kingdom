@@ -2388,7 +2388,7 @@
 
     const SW_SAVE_KEY = "sw-stats-v1";
 
-    /* ~290 curated 5-letter target / valid words */
+    /* ~570 curated 5-letter target / valid words */
     const SW_WORDS = [
         "ABOUT","ABOVE","ABUSE","ACTOR","ACUTE","ADMIT","ADOPT","ADULT","AFTER","AGAIN",
         "AGENT","AGREE","AHEAD","ALARM","ALBUM","ALERT","ALIEN","ALIKE","ALIVE","ALLEY",
@@ -2687,7 +2687,7 @@
         _revealRow(rowIdx, states, onDone) {
             const tiles = this._tiles[rowIdx];
             let revealed = 0;
-            const flipDelay = state.reducedMotion ? 0 : 300;
+            const interTileDelay = state.reducedMotion ? 0 : 300;
             tiles.forEach((tile, i) => {
                 setTimeout(() => {
                     audio.swReveal(states[i], i);
@@ -2712,7 +2712,7 @@
                             }
                         }, { once: true });
                     }, { once: true });
-                }, i * flipDelay);
+                }, i * interTileDelay);
             });
         },
 
@@ -2796,10 +2796,10 @@
             document.getElementById("swStatBest").textContent = s.best;
             const dist = document.getElementById("swDistribution");
             const maxVal = Math.max(1, ...s.dist);
-            const currentGuess = this._st.won ? this._st.guesses.length - 1 : -1;
+            const winningGuessIndex = this._st.won ? this._st.guesses.length - 1 : -1;
             dist.innerHTML = s.dist.map((count, i) => {
                 const pct = Math.max(6, Math.round((count / maxVal) * 100));
-                const active = currentGuess === i ? " sw-dist-bar-active" : "";
+                const active = winningGuessIndex === i ? " sw-dist-bar-active" : "";
                 return `<div class="sw-dist-row">
                     <span class="sw-dist-label">${i + 1}</span>
                     <div class="sw-dist-bar${active}" style="width:${pct}%"><span>${count}</span></div>
